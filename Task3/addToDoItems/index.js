@@ -1,9 +1,12 @@
 const fetch = require('node-fetch');
+const vars = require('../const');
 
-const url = 'https://api.trello.com/1/members/604509d44a708d6d48a58d19/boards?key=946feceaa9b2468a62d8e3ab9b56f9a2&token=f2fbbd70da60c7fe7b7838f746d2ed48fcbd5a09cb9bd5fe470d93e381f5eea4';
+const ENV_VARS = `key=${vars.envVars.API_KEY}&token=${vars.envVars.API_TOKEN}`
 
 const fetchBoardId = async (boardName) => {
-  const responseBoard = await fetch(url);
+  const ENDPOINT = 'https://api.trello.com/1/members/';
+  const userId = '604509d44a708d6d48a58d19';
+  const responseBoard = await fetch(`${ENDPOINT}${userId}/boards?${ENV_VARS}`);
   const jsonBoard = await responseBoard.json();
   let boardId;
 
@@ -18,19 +21,27 @@ const fetchBoardId = async (boardName) => {
     return;
   }
 
+  console.log(`Board ${boardName} found - id: ${boardId}`);
   return boardId;
 }
 
 const fetchListId = async (boardId) => {
   let toDoListId;
-  const responseBoardLists = await fetch(`https://api.trello.com/1/boards/${boardId}/lists/?key=946feceaa9b2468a62d8e3ab9b56f9a2&token=f2fbbd70da60c7fe7b7838f746d2ed48fcbd5a09cb9bd5fe470d93e381f5eea4`);
+  const ENDPOINT = 'https://api.trello.com/1/boards/';
+  const responseBoardLists = await fetch(`${ENDPOINT}${boardId}/lists/?${ENV_VARS}`);
   const jsonBoardLists = await responseBoardLists.json();
 
   jsonBoardLists.map(boardList => {
     if (boardList.name === 'To Do') {
       toDoListId = boardList.id;
+      console.log(`List To Do found - id: ${toDoListId}`);
     }
   });
+
+  if (toDoListId === null || toDoListId === undefined) {
+    console.error(`BoardList To Do has not been found, please make sure the list exists and try again.`)
+    return;
+  }
 
   return toDoListId;
 }
@@ -39,30 +50,42 @@ const createToDoCard = async (teamMemberName, toDoListId) => {
   const cardName = `${teamMemberName}'s list`;
   const cardDescription = `New work for ${teamMemberName}`;
   const todayDate = new Date();
-  const due = new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate()+7);
+  const dueDate = new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate()+7);
+  const params = `idList=${toDoListId}&name=${cardName}&desc=${cardDescription}&due=${dueDate}`;
+  const ENDPOINT = 'https://api.trello.com/1/cards';
 
-  const responseNewToDoCard = await fetch(`https://api.trello.com/1/cards?idList=${toDoListId}&name=${cardName}&desc=${cardDescription}&due=${due}&key=946feceaa9b2468a62d8e3ab9b56f9a2&token=f2fbbd70da60c7fe7b7838f746d2ed48fcbd5a09cb9bd5fe470d93e381f5eea4`, {
+  const responseNewToDoCard = await fetch(`${ENDPOINT}?${params}&${ENV_VARS}`, {
     method: 'POST'
   });
 
   const jsonToDoCard = await responseNewToDoCard.json();
   
+  console.log(`To Do card ${jsonToDoCard.name} has been created with id ${jsonToDoCard.id}`);
   return jsonToDoCard.id;
 }
 
 const createChecklist = async (cardId, checklistName) => {
-  const responseChecklist = await fetch(`https://api.trello.com/1/cards/${cardId}/checklists?name=${checklistName}&key=946feceaa9b2468a62d8e3ab9b56f9a2&token=f2fbbd70da60c7fe7b7838f746d2ed48fcbd5a09cb9bd5fe470d93e381f5eea4`, {
+  const ENDPOINT = 'https://api.trello.com/1/cards/';
+  const params = `name=${checklistName}`;
+  const responseChecklist = await fetch(`${ENDPOINT}${cardId}/checklists?${params}&${ENV_VARS}`, {
       method: 'POST'
     });
   const jsonChecklist = await responseChecklist.json();
   
+  console.log(`Checklist ${jsonChecklist.name} has been created with id ${jsonChecklist.id}`);
   return jsonChecklist.id;
 }
 
 const createCheckItems = async (checklistId, checkItemName) => {
-  await fetch(`https://api.trello.com/1/checklists/${checklistId}/checkItems?name=${checkItemName}&key=946feceaa9b2468a62d8e3ab9b56f9a2&token=f2fbbd70da60c7fe7b7838f746d2ed48fcbd5a09cb9bd5fe470d93e381f5eea4`, {
+  const ENDPOINT = 'https://api.trello.com/1/checklists/';
+  const params = `name=${checkItemName}`;
+  const responseCheckItem = await fetch(`${ENDPOINT}${checklistId}/checkItems?${params}&${ENV_VARS}`, {
     method: 'POST'
   });
+  const jsonCheckItem = responseCheckItem.json();
+
+  console.log(`CheckItem ${jsonCheckItem.name} has been created with id ${jsonCheckItem.id}`);
+  return jsonCheckItem.id;
 }
 
 const addToDoItems = async (boardName, teamMemberName) => {
@@ -79,11 +102,11 @@ const addToDoItems = async (boardName, teamMemberName) => {
     const additionalTasksChecklistId = await createChecklist(cardId, 'Additional Tasks');
 
     // create checkItems on "Key task" checklist
-    createCheckItems(keyTasksChecklistId, 'Key task 1');
-    createCheckItems(keyTasksChecklistId, 'Key task 2');
+    await createCheckItems(keyTasksChecklistId, 'Key task 1');
+    await createCheckItems(keyTasksChecklistId, 'Key task 2');
     // create checkItems on "Additional" checklist
-    createCheckItems(additionalTasksChecklistId, 'Additional task 1');
-    createCheckItems(additionalTasksChecklistId, 'Additional task 2');
+    await createCheckItems(additionalTasksChecklistId, 'Additional task 1');
+    await createCheckItems(additionalTasksChecklistId, 'Additional task 2');
 
     console.log("New To Do card has been added sucessfully.");
   } catch (error) {

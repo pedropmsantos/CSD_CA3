@@ -1,7 +1,7 @@
 const fetch = require('node-fetch');
 const vars = require('../const');
 
-let userId = '604509d44a708d6d48a58d19';
+const userId = '604509d44a708d6d48a58d19';
 const ENDPOINT = 'https://api.trello.com/1/members/';
 
 const getUserInfo = (userId) => {
