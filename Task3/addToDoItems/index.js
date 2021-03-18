@@ -13,6 +13,11 @@ const fetchBoardId = async (boardName) => {
     }
   });
 
+  if (boardId === null || boardId === undefined) {
+    console.error(`Board ${boardName} has not been found, please make sure the board name is correct and try again.`)
+    return;
+  }
+
   return boardId;
 }
 
@@ -30,87 +35,59 @@ const fetchListId = async (boardId) => {
   return toDoListId;
 }
 
-const createToDoCard = async () => {
+const createToDoCard = async (teamMemberName, toDoListId) => {
+  const cardName = `${teamMemberName}'s list`;
+  const cardDescription = `New work for ${teamMemberName}`;
+  const todayDate = new Date();
+  const due = new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate()+7);
+
+  const responseNewToDoCard = await fetch(`https://api.trello.com/1/cards?idList=${toDoListId}&name=${cardName}&desc=${cardDescription}&due=${due}&key=946feceaa9b2468a62d8e3ab9b56f9a2&token=f2fbbd70da60c7fe7b7838f746d2ed48fcbd5a09cb9bd5fe470d93e381f5eea4`, {
+    method: 'POST'
+  });
+
+  const jsonToDoCard = await responseNewToDoCard.json();
   
+  return jsonToDoCard.id;
 }
 
-const createChecklist = async () => {
+const createChecklist = async (cardId, checklistName) => {
+  const responseChecklist = await fetch(`https://api.trello.com/1/cards/${cardId}/checklists?name=${checklistName}&key=946feceaa9b2468a62d8e3ab9b56f9a2&token=f2fbbd70da60c7fe7b7838f746d2ed48fcbd5a09cb9bd5fe470d93e381f5eea4`, {
+      method: 'POST'
+    });
+  const jsonChecklist = await responseChecklist.json();
   
+  return jsonChecklist.id;
 }
 
-const createCheckItems = async () => {
-  
+const createCheckItems = async (checklistId, checkItemName) => {
+  await fetch(`https://api.trello.com/1/checklists/${checklistId}/checkItems?name=${checkItemName}&key=946feceaa9b2468a62d8e3ab9b56f9a2&token=f2fbbd70da60c7fe7b7838f746d2ed48fcbd5a09cb9bd5fe470d93e381f5eea4`, {
+    method: 'POST'
+  });
 }
 
 const addToDoItems = async (boardName, teamMemberName) => {
   try {
-    // fetch the boardId
+    // Get the boardId in order to create a new card
     const boardId = await fetchBoardId(boardName);
-    // fetch the listId
+    // Get the "To Do" listId
     const toDoListId = await fetchListId(boardId);
+    // create new card in To Do list
+    const cardId = await createToDoCard(teamMemberName, toDoListId);
+    // Create "Key Tasks" checklist on a card
+    const keyTasksChecklistId = await createChecklist(cardId, 'Key Tasks');
+    // Create "Additional Tasks" checklist on a card
+    const additionalTasksChecklistId = await createChecklist(cardId, 'Additional Tasks');
 
-    // create new To Do card
-    createToDoCard();
-    const cardName = `${teamMemberName}'s list`;
-    const cardDescription = "New work for Tom";
-    const todayDate = new Date();
-    const due = new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate()+7);
+    // create checkItems on "Key task" checklist
+    createCheckItems(keyTasksChecklistId, 'Key task 1');
+    createCheckItems(keyTasksChecklistId, 'Key task 2');
+    // create checkItems on "Additional" checklist
+    createCheckItems(additionalTasksChecklistId, 'Additional task 1');
+    createCheckItems(additionalTasksChecklistId, 'Additional task 2');
 
-    const responseNewToDoCard = await fetch(`https://api.trello.com/1/cards?idList=${toDoListId}&name=${cardName}&desc=${cardDescription}&due=${due}&key=946feceaa9b2468a62d8e3ab9b56f9a2&token=f2fbbd70da60c7fe7b7838f746d2ed48fcbd5a09cb9bd5fe470d93e381f5eea4`, {
-      method: 'POST'
-    });
-
-    const jsonToDoCard = await responseNewToDoCard.json();
-    const cardId = jsonToDoCard.id;
-
-    // Create checklist on a card - It should be triggered twice, one for each checklist
-    createChecklist('Key Tasks');
-    createChecklist('Additional Tasks');
-
-    const fName = 'Key Tasks';
-    const sName = 'Additional Tasks';
-    const responseKeyTasksChecklist = await fetch(`https://api.trello.com/1/cards/${cardId}/checklists?name=${fName}&key=946feceaa9b2468a62d8e3ab9b56f9a2&token=f2fbbd70da60c7fe7b7838f746d2ed48fcbd5a09cb9bd5fe470d93e381f5eea4`, {
-      method: 'POST'
-    });
-    const jsonKeyTaksChecklist = await responseKeyTasksChecklist.json();
-    console.log(`jsonChecklist: ${JSON.stringify(jsonKeyTaksChecklist)}`);
-    const keyTasksChecklistId = jsonKeyTaksChecklist.id;
-
-    const responseAdditionalTasksChecklist = await fetch(`https://api.trello.com/1/cards/${cardId}/checklists?name=${sName}&key=946feceaa9b2468a62d8e3ab9b56f9a2&token=f2fbbd70da60c7fe7b7838f746d2ed48fcbd5a09cb9bd5fe470d93e381f5eea4`, {
-      method: 'POST'
-    });
-    const jsonAdditionalTasksChecklist = await responseAdditionalTasksChecklist.json();
-    console.log(`jsonChecklist: ${JSON.stringify(jsonAdditionalTasksChecklist)}`);
-    const additionalTasksChecklistId = jsonAdditionalTasksChecklist.id;
-
-
-    // create checkItems
-    createCheckItems();
-    createCheckItems();
-    createCheckItems();
-    createCheckItems();
-
-    const firstKeyTaskItem = 'Key task 1';
-    const secondKeyTaskItem = 'Key task 2';
-    const responseFKT = await fetch(`https://api.trello.com/1/checklists/${keyTasksChecklistId}/checkItems?name=${firstKeyTaskItem}&key=946feceaa9b2468a62d8e3ab9b56f9a2&token=f2fbbd70da60c7fe7b7838f746d2ed48fcbd5a09cb9bd5fe470d93e381f5eea4`, {
-      method: 'POST'
-    });
-    const responseSKT = await fetch(`https://api.trello.com/1/checklists/${keyTasksChecklistId}/checkItems?name=${secondKeyTaskItem}&key=946feceaa9b2468a62d8e3ab9b56f9a2&token=f2fbbd70da60c7fe7b7838f746d2ed48fcbd5a09cb9bd5fe470d93e381f5eea4`, {
-      method: 'POST'
-    });
-
-    const firstAdditionalTaskItem = 'Additional task 1';
-    const secondAdditionalTaskItem = 'Additional task 2';
-    const responseFAT = await fetch(`https://api.trello.com/1/checklists/${additionalTasksChecklistId}/checkItems?name=${firstAdditionalTaskItem}&key=946feceaa9b2468a62d8e3ab9b56f9a2&token=f2fbbd70da60c7fe7b7838f746d2ed48fcbd5a09cb9bd5fe470d93e381f5eea4`, {
-      method: 'POST'
-    });
-    const responseSAT = await fetch(`https://api.trello.com/1/checklists/${additionalTasksChecklistId}/checkItems?name=${secondAdditionalTaskItem}&key=946feceaa9b2468a62d8e3ab9b56f9a2&token=f2fbbd70da60c7fe7b7838f746d2ed48fcbd5a09cb9bd5fe470d93e381f5eea4`, {
-      method: 'POST'
-    });
-
+    console.log("New To Do card has been added sucessfully.");
   } catch (error) {
     console.error(error);
- 
   }
 }
 
