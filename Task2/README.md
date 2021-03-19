@@ -2,7 +2,7 @@
 
 The Design Pattern chosen to implement this sample messaging system was the Observer Pattern, also known as Publish/Subscribe pattern. This pattern would be ideal to implement this sort of system as it intends to publish a message to all it's listeners.
 
-This pattern can also be implemented by using the redis pub/sub mechanism and also the websocket connections, which can be easly implemented with NodeJS. 
+This pattern can also be implemented by using the [redis pub/sub](https://redis.io/topics/pubsub) mechanism and also the [websocket connections](https://spring.io/guides/gs/messaging-stomp-websocket/), which can be easly [implemented with NodeJS](https://www.npmjs.com/package/websocket). 
 
 A simple way of explain the Observer Patter is by using the MVC pattern, which in fact is a sort of Obeserver pattern, where all Views are Observers of a Model (Observable), and Views are notified every time the model's state changes.
 
