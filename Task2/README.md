@@ -75,6 +75,12 @@ git rebase master -i
 
 Then a list of commits will open, pressing `i` will allow me to edit, so now it is possible to squash the unwanted commits by going to the commits we replacing the `pick` to `squash` (or just `s`)
 
-<PLACE THE SCREENSHOT HERE>
+<img width="589" alt="Screenshot 2021-03-19 at 12 07 53" src="https://user-images.githubusercontent.com/76180609/111778678-f15ba680-88ac-11eb-9b98-562fbab158c9.png">
+
 
 After that I needed to save the changes by pressing `:` to leave the editing mode and then type `wq`, to write and quit the rebase, now after running the `git log` it's possible to see the new commits and it's messages.
+
+Now in order to push the new commits to the remote repo, I has to force push the changes by running the following.
+```
+git push origin task2 -f # The -f means we are force pushing the changes, it is required after squashing a commit
+```
