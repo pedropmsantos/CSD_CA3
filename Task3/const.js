@@ -1,3 +1,6 @@
+// Student Name: Pedro Paulo Macena Santos
+// Student Number: L00161845
+
 const envVars = {
   hostname: '127.0.0.1',
   port: 3000,

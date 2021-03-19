@@ -1,3 +1,6 @@
+// Student Name: Pedro Paulo Macena Santos
+// Student Number: L00161845
+
 package com.ca3.eventObserver;
 
 import com.ca3.observer.Observer;
